@@ -11,7 +11,7 @@ Critical Path Cost: 15
 
 Graph 2:
 Edge  t_ij  t_ij_RN  t_ij_RO  t_ij_PN  t_ij_PO  R  r
- 1-2     4        0        4        4        8  4  0
+ 1-2     4        0        4        0        4  0  0
  1-3     6        0        6        5       11  5  0
  2-4     7        4       11        4       11  0  0
  2-5     5        4        9        8       13  5  0
