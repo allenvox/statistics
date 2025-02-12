@@ -1,0 +1,23 @@
+Graph 1:
+Edge  t_ij  t_ij_RN  t_ij_RO  t_ij_PN  t_ij_PO  R  r
+ A-B     2        0        2        7        9  7  0
+ A-C     7        0        7        0        7  0  0
+ B-D     1        2        3        9       10  7  7
+ C-D     3        7       10        7       10  0  0
+ D-E     5       10       15       10       15  0  0
+
+Critical Path: A -> C -> D -> E
+Critical Path Cost: 15
+
+Graph 2:
+Edge  t_ij  t_ij_RN  t_ij_RO  t_ij_PN  t_ij_PO  R  r
+ 1-2     4        0        4        4        8  4  0
+ 1-3     6        0        6        5       11  5  0
+ 2-4     7        4       11        4       11  0  0
+ 2-5     5        4        9        8       13  5  0
+ 3-5     2        6        8       11       13  5  1
+ 4-6     3       11       14       11       14  0  0
+ 5-6     1        9       10       13       14  4  4
+
+Critical Path: 1 -> 2 -> 4 -> 6
+Critical Path Cost: 14
