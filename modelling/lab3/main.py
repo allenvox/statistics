@@ -21,8 +21,8 @@ def prob_inverse(d, b):
     """Функция вероятности P(d) = 1 / d^b, нормированная"""
     return min(1, 10 / (d ** b)) if d > 1 else 1  
 
-def build_tree(num_points, method, param_a, param_b=1, size=100, seed=42):
-    """Формируем дерево, влияя на плотность связей"""
+def build_tree(num_points, method, param_a, param_b=1, max_degree=5, size=100, seed=42):
+    """Формируем дерево с ограничением максимальной степени вершин"""
     x_coords, y_coords = generate_points(num_points, size, seed)
     G = nx.Graph()
     
@@ -36,10 +36,13 @@ def build_tree(num_points, method, param_a, param_b=1, size=100, seed=42):
 
         # Ищем, с кем соединить новую точку
         for i in connected_nodes:
+            if G.degree(i) >= max_degree:  # Если вершина уже имеет max_degree связей — пропускаем
+                continue
+            
             d = distance(x_coords, y_coords, i, j)
             if 2 <= d <= 40:  # Ограничиваем дальность связи
                 if method == "a":
-                    p = prob_exp(d, param_a, param_b)  # Теперь b тоже участвует
+                    p = prob_exp(d, param_a, param_b)
                 else:
                     p = prob_inverse(d, param_b)
                     
@@ -51,9 +54,14 @@ def build_tree(num_points, method, param_a, param_b=1, size=100, seed=42):
         if best_i is not None:
             G.add_edge(best_i, j)
         else:
-            # В крайнем случае соединяем с ближайшей точкой
-            closest = min(connected_nodes, key=lambda i: distance(x_coords, y_coords, i, j))
-            G.add_edge(closest, j)
+            # В крайнем случае соединяем с ближайшей точкой, если у нее еще есть "свободные слоты"
+            closest = min(
+                [i for i in connected_nodes if G.degree(i) < max_degree], 
+                key=lambda i: distance(x_coords, y_coords, i, j),
+                default=None
+            )
+            if closest is not None:
+                G.add_edge(closest, j)
 
         connected_nodes.add(j)  
 
@@ -75,17 +83,19 @@ def plot_tree(G, x_coords, y_coords, title, filename):
     plt.savefig(filename, dpi=300)
     plt.close()
 
-# Генерируем деревья
+# Генерируем деревья с разными ограничениями степени вершин
 num_points = 300
 seed_value = 666
 
 for a in [0.1, 0.5, 1, 2, 3]:
     for b in [0.5, 0.8, 1, 2, 3]:
-        G, x_coords, y_coords = build_tree(num_points, method="a", param_a=a, param_b=b, seed=seed_value)
-        filename = f"f1_{a}-{b}.png"
-        plot_tree(G, x_coords, y_coords, f"Дерево при a = {a}, b = {b}", filename)
+        for max_deg in [3, 5, 8]:  # Тестируем разные максимальные степени вершин
+            G, x_coords, y_coords = build_tree(num_points, method="a", param_a=a, param_b=b, max_degree=max_deg, seed=seed_value)
+            filename = f"f1_{a}-{b}-deg{max_deg}.png"
+            plot_tree(G, x_coords, y_coords, f"Дерево при a={a}, b={b}, max_deg={max_deg}", filename)
 
 for b in [0.5, 0.8, 1, 2, 3]:
-    G, x_coords, y_coords = build_tree(num_points, method="b", param_a=1, param_b=b, seed=seed_value)
-    filename = f"f2_{b}.png"
-    plot_tree(G, x_coords, y_coords, f"Дерево при b = {b}", filename)
+    for max_deg in [3, 5, 8]:
+        G, x_coords, y_coords = build_tree(num_points, method="b", param_a=1, param_b=b, max_degree=max_deg, seed=seed_value)
+        filename = f"f2_{b}-deg{max_deg}.png"
+        plot_tree(G, x_coords, y_coords, f"Дерево при b={b}, max_deg={max_deg}", filename)
