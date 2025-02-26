@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import os
 
 def generate_numbers(size, seed=42):
     """Генерация массива чисел от 1 до size."""
@@ -29,15 +30,19 @@ def build_matrix(numbers, sample):
 
     return matrix
 
-def plot_matrix(matrix, title):
-    """Визуализация матрицы"""
+def save_matrix_plot(matrix, title, filename):
+    """Сохранение графика матрицы в файл"""
     plt.figure(figsize=(10, 6))
     plt.imshow(matrix, cmap="gray", aspect="auto")
     plt.xlabel("Индексы элементов")
     plt.ylabel("Выборки")
     plt.title(title)
     plt.colorbar(label="0 - не выбрано, 1 - выбрано")
-    plt.show()
+    plt.savefig(filename, dpi=300)
+    plt.close()
+
+output_dir = "plots"
+os.makedirs(output_dir, exist_ok=True)
 
 # Основные параметры
 sizes = [10, 100, 1000]  # Размер исходных массивов
@@ -64,6 +69,12 @@ for size in sizes:
         matrix_wr = build_matrix(numbers, sample_wr)
         matrix_wor = build_matrix(numbers, sample_wor)
 
-        # Визуализируем матрицы
-        plot_matrix(matrix_wr, f"Матрица (с возвращением) для size={size}, {criterion_name}")
-        plot_matrix(matrix_wor, f"Матрица (без возвращения) для size={size}, {criterion_name}")
+        # Формируем имя файла
+        filename_wr = os.path.join(output_dir, f"matrix_WR_{size}_{criterion_name.replace(' ', '_')}.png")
+        filename_wor = os.path.join(output_dir, f"matrix_WOR_{size}_{criterion_name.replace(' ', '_')}.png")
+
+        # Сохраняем графики
+        save_matrix_plot(matrix_wr, f"Матрица (с возвращением) size={size}, {criterion_name}", filename_wr)
+        save_matrix_plot(matrix_wor, f"Матрица (без возвращения) size={size}, {criterion_name}", filename_wor)
+
+        print(f"Графики сохранены: {filename_wr}, {filename_wor}")
