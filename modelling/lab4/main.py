@@ -3,49 +3,52 @@ import random
 import matplotlib.pyplot as plt
 import os
 
-def generate_numbers(size, seed=42):
-    np.random.seed(seed)
-    numbers = np.arange(1, size + 1)
-    return numbers
+def generate_numbers(size):
+    return np.arange(1, size + 1)
 
-def sample_with_replacement(numbers, sample_size):
+def sample_with_replacement(numbers, sample_size, seed=None):
+    if seed is not None:
+        random.seed(seed)
     return [int(random.choice(numbers)) for _ in range(sample_size)]
 
-def sample_without_replacement(numbers, sample_size):
+def sample_without_replacement(numbers, sample_size, seed=None):
+    if seed is not None:
+        random.seed(seed)
     return list(map(int, random.sample(list(numbers), sample_size)))
 
-def build_matrix(numbers, sample, passes=3):
-    n = len(sample) * passes  # Увеличиваем количество строк
-    m = len(numbers)
+def build_frequency_matrix(numbers, sample, passes=3, use_seed=True):
+    n = len(sample)  
+    m = len(numbers)  
     matrix = np.zeros((n, m), dtype=int)
 
-    # Заполняем матрицу за несколько проходов
     for pass_idx in range(passes):
-        for i, value in enumerate(sample):
-            idx = np.where(numbers == value)[0][0]
-            matrix[pass_idx * len(sample) + i, idx] = 1
+        seed = random.randint(0, 10000) if use_seed else None
+        sample_wr = sample_with_replacement(sample, len(sample), seed)
+
+        for i, value in enumerate(sample_wr):
+            idx = np.where(numbers == value)[0][0]  
+            matrix[i, idx] += 1  
 
     return matrix
 
 def save_matrix_plot(matrix, title, filename):
-    plt.figure(figsize=(10, 6))
-    plt.imshow(matrix, cmap="gray", aspect="auto")
+    plt.figure(figsize=(12, 6))
+    plt.imshow(matrix, cmap="plasma", aspect="auto")
     plt.xlabel("Индексы элементов")
-    plt.ylabel("Выборки (несколько проходов)")
+    plt.ylabel("Выборки")
     plt.title(title)
-    plt.colorbar(label="0 - не выбрано, 1 - выбрано")
+    plt.colorbar(label="Частота появления элемента")
     plt.savefig(filename, dpi=300)
     plt.close()
 
 def print_matrix(matrix):
     for row in matrix:
-        print(" ".join(str(x) for x in row))
+        print(" ".join(f"{x:2}" for x in row))
 
 output_dir = "plots"
 os.makedirs(output_dir, exist_ok=True)
 
-# Основные параметры
-sizes = [10, 100]  # Размеры исходных массивов
+sizes = [10, 100]  
 sample_criteria = [
     ("Кратные пяти", lambda x: x % 5 == 0),
     ("Простые числа", lambda x: all(x % i != 0 for i in range(2, int(np.sqrt(x)) + 1)) and x > 1),
@@ -63,9 +66,8 @@ for size in sizes:
 
         if not sample:
             print(f"Для критерия {criterion_name} выборка пуста")
-            continue
+            continue  
 
-        # Выборки с возвращением и без
         sample_wr = sample_with_replacement(sample, min(len(sample), 20))
         sample_wor = sample_without_replacement(sample, min(len(sample), 20))
 
@@ -73,21 +75,19 @@ for size in sizes:
         print(f"  Размещение с возвращением: {sample_wr}")
         print(f"  Размещение без возвращения: {sample_wor}")
 
-        # Строим матрицы (3 прохода)
-        matrix_wr = build_matrix(numbers, sample_wr, passes=3)
-        matrix_wor = build_matrix(numbers, sample_wor, passes=3)
+        matrix_wr = build_frequency_matrix(numbers, sample_wr, passes=13, use_seed=True)
+        matrix_wor = build_frequency_matrix(numbers, sample_wor, passes=42, use_seed=True)
 
-        # Выводим часть матрицы в консоль
-        print("\nМатрица с возвращением:")
-        print_matrix(matrix_wr[:min(10, len(matrix_wr))])  # Выводим первые 10 строк
-        print("\nМатрица без возвращения:")
-        print_matrix(matrix_wor[:min(10, len(matrix_wor))])
+        print("\nМатрица частот с возвращением, 13 проходов:")
+        print_matrix(matrix_wr)
 
-        # Сохраняем графики
-        filename_wr = os.path.join(output_dir, f"matrix_WR_{size}_{criterion_name.replace(' ', '_')}.png")
-        filename_wor = os.path.join(output_dir, f"matrix_WOR_{size}_{criterion_name.replace(' ', '_')}.png")
+        print("\nМатрица частот без возвращения, 42 прохода:")
+        print_matrix(matrix_wor)
 
-        save_matrix_plot(matrix_wr, f"Матрица (с возвращением) size={size}, {criterion_name}", filename_wr)
-        save_matrix_plot(matrix_wor, f"Матрица (без возвращения) size={size}, {criterion_name}", filename_wor)
+        filename_wr = os.path.join(output_dir, f"freq_matrix_WR_{size}_{criterion_name.replace(' ', '_')}.png")
+        filename_wor = os.path.join(output_dir, f"freq_matrix_WOR_{size}_{criterion_name.replace(' ', '_')}.png")
+
+        save_matrix_plot(matrix_wr, f"Частотная матрица (с возвращением) size={size}, {criterion_name}", filename_wr)
+        save_matrix_plot(matrix_wor, f"Частотная матрица (без возвращения) size={size}, {criterion_name}", filename_wor)
 
         print(f"Графики сохранены: {filename_wr}, {filename_wor}")
